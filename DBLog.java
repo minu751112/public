@@ -56,7 +56,7 @@ public class DBLog {
                     st.close();
                 }
                 if (conn != null) {
-                	DBConnectingPool.bringBackConnection(conn);
+                	DBConnectingPool.releaseConnection(conn);
                 }
                 
             }
