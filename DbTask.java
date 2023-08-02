@@ -12,21 +12,7 @@ public class DbTask {
     public static HashMap<String, String> LogJobb1(HashMap<String, String> mapParam) throws Exception, SQLException {
         String sql = "";
         HashMap<String, String> mapOut = new HashMap<String, String>();
-        String rcvurl = mapParam.get("rcvurl");
-        String rspurl = mapParam.get("rspurl");
-        String ifname = mapParam.get("ifname");
-        String rfcname = mapParam.get("rfcname");
-        String transactionid = mapParam.get("transactionid");
-        String total = mapParam.get("total");
-        String ord = mapParam.get("ord");
-        String syncdiv = mapParam.get("syncdiv");
-        String requestbody = mapParam.get("requestbody");
-        String responseBody = mapParam.get("responseBody");
-        String source = mapParam.get("source");
-        String target = mapParam.get("target");
-        String status = mapParam.get("status");
-        String msg = mapParam.get("msg");
-
+... 중략
         try {
 			if (msg == null) {
 				msg	= msg.replace("'","''");	//메시지
