@@ -58,7 +58,7 @@ public class DBConnectingPool {
                     conn = null;
                 }
             } else {
-                // 모든 커넥션이 busy 일때 0.1초씩 슬립시키고, 대기시간이 maxTimeout(30초)를 넘어가면 Exception 
+                // 모든 connection이 busy 일때 0.1초씩 슬립시키고, 대기시간이 maxTimeout(30초)를 넘어가면 Exception 
                 long elapsedTime = System.currentTimeMillis() - startWaitTime;
                 if (elapsedTime > maxTimeout) {
                     throw new Exception("Connection pool wait timeout");
