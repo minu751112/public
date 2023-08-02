@@ -6,7 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 
-public class DbTask {
+public class DBLog {
 
     // 전문번호, 접수시간, json입력
     public static HashMap<String, String> LogJobb1(HashMap<String, String> mapParam) throws Exception, SQLException {
