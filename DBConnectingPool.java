@@ -88,7 +88,7 @@ public class DBConnectingPool {
         }
     }
 
-    public static synchronized void bringBackConnection(Connection conn) {
+    public static synchronized void releaseConnection(Connection conn) {
         System.out.println("☆★☆★☆★☆★☆★ before idle.size : "+idleConnections.size());
         System.out.println("☆★☆★☆★☆★☆★ before busy.size : "+busyConnections.size());
         
