@@ -1,0 +1,1032 @@
+<apex:page controller="ScheduleCalendarController" sidebar="false" action="{!init}">
+
+    <!--<apex:Stylesheet value="{!URLFOR($Resource.slds, 'assets/styles/salesforce-lightning-design-system.css')}" />-->
+    <apex:stylesheet value="{!URLFOR($Resource.slds_283, 'styles/salesforce-lightning-design-system.css')}" />
+    <link rel='stylesheet' href='//cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.0.1/fullcalendar.min.css' />
+    <link type="text/css" rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+
+    <script src='//cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>
+    <script src='//cdnjs.cloudflare.com/ajax/libs/moment.js/2.14.1/moment.min.js'></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.9/moment-timezone-with-data.min.js"></script>
+    <script src='//cdnjs.cloudflare.com/ajax/libs/moment.js/2.14.1/locale/ko.js'></script>
+    <!--script src="{!$Resource.fullcaljs}"></script-->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.0.1/fullcalendar.min.js"></script>
+    <script src='//ajax.microsoft.com/ajax/jquery.templates/beta1/jquery.tmpl.min.js'></script>
+
+    <apex:Stylesheet value="{!URLFOR($Resource.tooltipster, 'css/tooltipster.bundle.min.css')}" />
+    <apex:Stylesheet value="{!URLFOR($Resource.tooltipster, 'css/tooltipster-follower.min.css')}" />
+    <apex:Stylesheet value="{!URLFOR($Resource.tooltipster, 'css/plugins/tooltipster/sideTip/themes/tooltipster-sideTip-shadow.min.css')}" />
+    <script src="{!URLFOR($Resource.tooltipster, 'js/tooltipster.bundle.min.js')}"></script>
+    <script src="{!URLFOR($Resource.tooltipster, 'js/tooltipster-follower.min.js')}"></script>
+
+    <style>
+    .fc-event { font-size: inherit !important; padding: 2px;}
+    .slds-form-element__static { line-height: inherit; min-height: inherit; }
+    .fc-more-popover { border: 1px solid #333 !important; }
+    td .fc-day-number a { text-decoration: underline; font-weight: 600; font-size: 14px; color: #333; }
+    .fc-day-number.fc-other-month { opacity: .6; filter: alpha(opacity=60);}
+    .fc-day-number.fc-other-month a { color: #0070D2 !important; }
+    .fc-other-month { background-color: #f7f7f5;}
+    /* .fc-center { padding-left: 7%; } */
+    .fc-center { position: absolute; }
+    .fc-center h2 { color: #08107B; font-size: 17pt; font-weight: 600;  }
+    .fc-sun { color: #c23934 !important; }
+    .fc-sat { color: #3a87ad !important; }
+    
+    .slds-form-element__label { font-weight: bold; margin-bottom: 0;}
+    .slds-form-element__static { color: #666; }
+    
+    #filter-group { text-align: left; padding-bottom: 5px; }
+    #link-btn { position:absolute;right: 10px; }/* margin-top: -43px;*/
+    #filter { display:inline-block; padding:0px; vertical-align: middle;float:left;}
+    #filter .category_group { display: inline-block; border: 1px solid #999; padding: 3px; border-radius: 0.25rem; }
+    #filter span { height: 20px; display: inline-block;}
+    #filter .label { font-weight: bold; }
+    #filter .category { width: 20px; cursor: pointer; border: 1px solid; }
+    #filter .field-works { background-color: #c8852c; border-color: #c8852c; }
+    #filter .inoffice-works { background-color: #026892; border-color: #026892; }
+    #filter .vacation { background-color: #b82647; border-color: #b82647; }
+    #filter .opd { background-color: #417141; border-color: #417141; }
+    #filter .congress { background-color: #7F4DD8; border-color: #7F4DD8; }
+    #filter .etc { background-color: #6d1b43; border-color: #6d1b43; }
+    #filter .FSE { background-color: #7e8be4; border-color: #7e8be4; }
+    #scope { display: inline-block; margin-left: 5px; float:left; padding: 0px;}
+    #scope .slds-select { width: inherit; height: 25px; }
+    #scope .label { font-weight: bold; }
+    #search{float:left;padding: 5px;}
+    .fa-user-plus { background-color:#efefef; color:darkblue; padding: 2px; border-radius: 3px; margin-right: 2px; }
+    .invitee { color: orangered !important; }
+    .high-priority { background-color: #efefef; color: rgba(194,57,52,.95); border-radius: 3px; padding: 2px; margin-right: 2px; }
+    .important-title {  color: rgba(194,57,52,.95); }
+    .ClearLeft{clear:left !important; padding:5px;}
+    /*.search-box{margin-left:5% !important;}*/
+    .slds-docked-form-footer { margin-top: 5px; text-align: center; }
+    #calendar{margin-top:2.5rem !important;}
+    .margintops{margin-top:0.5rem;}
+    #search{margin-top:0.5rem;}
+    .smargin{margin-top:0.2rem;    font-weight: bolder;}
+    .EventMessage{color:red;}
+    .slds-input2 { background-color: white; border: 1px solid #dddbda; border-radius: 0.25rem; width: 80%; transition: border 0.1s linear, background-color 0.1s linear; display: inline-block; padding: 0 1rem 0 0.75rem; min-height: calc(1.5rem + (1px * 2));}
+    /*돋보기 버튼 이미지 이동*/
+    .searchimages{position: absolute; margin-top: 0.2rem; right: 22%;}
+    .width70{width:70% !important}
+    .padding5{padding:5px !important;font-weight: bold;}
+</style>
+
+    <apex:outputText rendered="{!user.Post__c = 'Group Leader'}">
+        <script>
+    $(window).ready(function () {
+        $(".scope").val('ALL');
+    });
+</script>
+    </apex:outputText>
+
+    <script type="text/javascript">
+    var Stringtest;
+    var tooltipDisabled = false;
+    var calendar, events = [], list = [], lastPosition = {}, isSelected = false;
+    var retURL = encodeURIComponent(location.href);
+    var startdt='';
+    var enddt='';
+    var is_iPad = navigator.userAgent.match(/iPad/i) != null;
+	var chkId = '{! chkId }';
+    console.log('아이디 : ' + chkId);
+    var chkP = '{! chkP }';
+    console.log('확인 : ' + chkP);
+    var deleteURL = "{!URLFOR($Action.Event.Delete, '00UO000000AU000', [retURL='/apex/ScheduleCalendar?sfdc.tabName=01r28000000hZaX'])}";
+
+    /* moment.locale('ko'); // moment의 locale을 ko로 설정, (오전 11시 30과 같이 한글 표현) */
+    
+    var categories = {
+        'Field Work' : {
+            color : '#c8852c',
+            display : true
+        },
+        'In-Office Work' : {
+            color : '#026892',
+            display : true
+        },
+        'Vacation' : {
+            color : '#b82647',
+            display : true
+        },
+        'FSE' : {
+            color : '#7e8be4',
+            display : true
+        },
+        'OPD' : {
+            color : '#417141',
+            display : true
+        },
+        'ETC' : {
+            color : '#6d1b43',
+            display : true
+        },
+        'Congress' : {
+            color : '#7F4DD8',
+            display : true
+        }
+    };
+    
+    $(document.body).mousedown(function () {
+    
+        if (isSelected) {
+            
+//              console.log('already selected');
+            isSelected = false;
+            $("#calendar").fullCalendar("unselect");
+        }
+    });
+    
+    $(window).resize(function () {
+        $(".fc-center").css("left", (($(".fc-toolbar").width() - $(".fc-center").width()) / 2) + "px");
+    });
+    
+    $(window).ready(function() {
+        
+        $('.fc-prev-button').click(function(){
+           alert('prev is clicked, do something');
+        });
+
+        $('.fc-next-button').click(function(){
+           alert('nextis clicked, do something');
+        });
+
+        $('.fc-today-button').click(function(){
+           alert('nextis clicked, do something');
+        });
+        $("#btn-multi-user").click(function () {
+            var m = new moment();
+
+            location.href = "/00U/c?cType=2&md2=" + m.weeks() + "&md0=" + m.year();
+            
+        });
+    
+        // 카테고리 필터 처리
+        $(".category").click(function () {
+            if($('.spinnerSwitch').hasClass('slds-hide') == true){
+                $('.spinnerSwitch').toggleClass( 'slds-hide' );
+            }
+            var data = $(this).data("category");
+            var category = categories[data];
+            category.display = !category.display;
+            $(this).css("background-color", (category.display ? category.color : '#efefef'));
+            $(this).css("border-color", (category.display ? category.color : '#666'));
+            renderEvents();
+        });
+        
+        $(".category").tooltipster({
+            theme : 'tooltipster-shadow', // http://iamceege.github.io/tooltipster/#theming
+            side : 'bottom',
+            delay : 50,
+            distance : 4,
+            functionBefore : function(instance, helper) { // 툴팁이 open 되기 직전 실행
+                closeAllTooltips();
+    
+                instance.content($(helper.origin).data('category'));
+            }
+        });
+
+        $(".scope").change(function () {
+            window.console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> refetchEvents [S] >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+            id = '000000000000000';
+            name = '';
+            /*$(".field-hospital input[type=hidden]:eq(0)").val(id);
+            $(".field-hospital input[type=hidden]:eq(1)").val(name);
+            $(".field-hospital input[type=hidden]:eq(5)").val(1);
+            $(".field-hospital .emptyDependentLookup").val(name);
+            $(".field-hospital input.InputSearch").val(name);*/
+            window.console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> refetchEvents [E] >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+/*
+            if($('.Hospital').val() != ''){
+                $('.Hospital').val('');
+            }*/
+            if($('.Hospital').val() != ''){
+                $('.Hospital').val('');
+                $(".hiddenHospital").val('');
+            }
+
+            if($('.spinnerSwitch').hasClass('slds-hide') == true){
+                $('.spinnerSwitch').toggleClass( 'slds-hide' );
+            }
+            $('#calendar').fullCalendar( 'refetchEvents' );
+        });
+        
+    
+        // 캘린더 초기화
+        calendar = $('#calendar').fullCalendar({
+            selectable : false, // 마우스로 달력 배경을 드래그해 선택
+            editable : true, // 마우스로 일정을 끌어 수정할 수 있음
+            handleWindowResize : true, // 윈도우 크기 변경시 자동 조정
+            nowIndicator: true, // 오늘 날짜 하이라이트
+            eventLimit: true, // more 버튼 출력
+            contentHeight: 900,
+            timeFormat : 'A hh:mm',
+            displayEventTime : false,
+            views : {
+                month : {
+                    titleFormat : 'MMMM, YYYY',
+                },
+                week : {
+                    titleFormat : 'YYYY. M. D',
+                },
+                day : {
+                    titleFormat : 'LL',
+                },
+            },
+
+            customButtons: {
+                newEvent : {
+                    text : '{!$Label.new_event}',
+                    click : function (date, jsEvent, view) {
+                        if(retURL.indexOf('lightning.force.com')!='-1'){
+                            var ProfileName='{!$Profile.Name}';
+                            if(ProfileName == 'FSE' || ProfileName == 'FS Support'){/*
+                                $('.RTSelect').toggleClass('slds-hide');
+                                */
+                                //sforce.one.createRecord('Event','{!RecordTypeId}');
+                                location.href = "/setup/ui/recordtypeselect.jsp?ent=Event&save_new_url=" + encodeURIComponent("/00U/e?retURL=" + retURL);
+                            }else{
+                                location.href = "/lightning/o/Event/new?count=1&nooverride=1&useRecordTypeCheck=1&navigationLocation=LIST_VIEW&backgroundContext=ScheduleCalendar";
+                                //location.href = "/setup/ui/recordtypeselect.jsp?ent=Event&save_new_url=" + encodeURIComponent("/00U/e?retURL=" + retURL);
+                                //                                alert('{!$Label.Event_Profile_Error}');
+                            }
+                        }else{
+                            location.href = "/setup/ui/recordtypeselect.jsp?ent=Event&save_new_url=" + encodeURIComponent("/00U/e?retURL=" + retURL);
+                        }
+                    }
+                }
+            },
+            header: { // 달력의 상단 메뉴구성
+                left: 'prev,next today',
+                center: 'title',
+                right: 'newEvent month,agendaWeek,agendaDay'
+            },
+            select : function( start, end, jsEvent, view ) { // 날짜 선택시
+                if(retURL.indexOf('lightning.force.com')!='-1'){
+                    var ProfileName='{!$Profile.Name}';
+                    if(ProfileName == 'FSE' || ProfileName == 'FS Support'){/*
+                        $('.RTSelect').toggleClass('slds-hide');
+                        */
+                        //sforce.one.createRecord('Event','{!RecordTypeId}');
+                        location.href = "/setup/ui/recordtypeselect.jsp?ent=Event&save_new_url=" + encodeURIComponent("/00U/e?retURL=" + retURL);
+                    }else{
+                        alert('{!$Label.Event_Profile_Error}');
+                    }
+                }else{
+                    location.href = "/setup/ui/recordtypeselect.jsp?ent=Event&save_new_url=" + encodeURIComponent("/00U/e?retURL=" + retURL);
+                }
+            /* 
+                console.log('select event invoked');
+                closeAllTooltips();
+                
+                isSelected = true;
+            
+                var startDate = start.format('YYYY. M. D').replace(/ /g, '+');
+                var endDate = end.add(-1, 'days').format('YYYY. M. D').replace(/ /g, '+');
+                
+                var newEventURL = "/00U/e?StartDateTime="+startDate+"&EndDateTime="+endDate+"&retURL="+retURL;
+
+                lastPosition = { top : jsEvent.originalEvent.clientY, left : jsEvent.originalEvent.clientX };
+                
+                $("#calendar").tooltipster("content", "<a href='"+newEventURL+"'>일정작성</a>");
+                $("#calendar").tooltipster("open");
+                 */
+            },
+            events: function(start, end, callback) { // 화면의 월, 주 일 등이 변경되었을때 일정 업데이트
+                $('.StartDate').attr('value',start);
+                $('.EndDate').attr('value',end);
+
+                startdt=start;
+                enddt=end;
+
+                if($('.spinnerSwitch').hasClass('slds-hide') == true){
+                    $('.spinnerSwitch').toggleClass( 'slds-hide' );
+                }
+                // ScheduleCalendarController 클래스의 getSchedules 호출
+                Visualforce.remoting.Manager.invokeAction(
+                    '{!$RemoteAction.ScheduleCalendarController.getSchedules}', 
+                    start.toISOString(), end.toISOString(), $(".scope").val() || 'ALL','ALL',
+                    function(result, evt){
+                    
+                        list = [];
+                        events = [];
+
+                        if (evt.status) {
+                            for (var i=0; i<result.length; i++) {
+                                var schedule = result[i];
+
+                                if (!schedule.Hospital__r) {Hospital__r = {};};
+                                if (!schedule.Activity_Result__c) schedule.Activity_Result__c = '-';
+                                if (!schedule.Importance__c) schedule.Importance__c = '';
+                                
+                                var color = '';
+                                if (schedule.Activity_Type__c) {
+                                    color = categories[schedule.Activity_Type__c].color;
+                                }
+                                if (schedule.Activity_Category__c && schedule.Activity_Category__c == 'OPD') {
+                                    color = categories['OPD'].color;
+                                }
+
+                                if (schedule.IsGroupEvent == true) {
+                                    if (schedule.IsChild == true) {
+                                        schedule.Subject = '[C]' + schedule.Subject; // invitee
+                                    } else {
+                                        schedule.Subject = '[O]' + schedule.Subject; // invitor
+                                    }
+
+                                }
+                                if (schedule.Importance__c == 'High') {
+                                    schedule.Subject = '[!]' + schedule.Subject;
+                                    console.log(schedule.Subject);
+                                }
+                                schedule.retURL = retURL;
+                                
+                                var event = { // FullCalendar의 Event 객체로 변환 (http://fullcalendar.io/docs/event_data/Event_Object/)
+                                    id : schedule.Id,
+                                    title : schedule.Subject,
+                                    allDay : schedule.IsAllDayEvent,
+                                    Hospital : schedule.Hospital,
+                                    start : new moment(schedule.StartDateTime).format(),
+                                    end : new moment(schedule.EndDateTime).format(),
+                                    color : color
+                                };
+                                
+                                // 툴팁에 출력하기 위해 list에 원본 데이터 저장
+                                list[schedule.Id] = schedule; 
+                                events.push(event);
+
+                                // console.log(event);
+                            }
+                            
+                            
+                            renderEvents();
+                            
+                        } else if (evt.type === 'exception') {
+                            console.log(evt.message);
+                        } else {
+                            console.log(evt.message);
+                        }
+                    }
+                );
+            },
+            eventRender: function (event, element) { // 일정 출력 이벤트 핸들러
+                if (!tooltipDisabled)
+                    prepareTooltip(event, element);
+            },
+            eventClick: function (event, jsEvent, view) {
+                if (!is_iPad) {
+                    location.href = "/" + event.id + "?retURL=" + retURL;
+                }
+            },
+            eventDragStart: function (event, jsEvent, ui, view) { // 일정 드래그 시작 이벤트 핸들러
+//                 // 떠있는 툴팁을 모두 닫는다.
+//                 var instances = $.tooltipster.instances();
+//                 $.each(instances, function(i, instance){
+//                     instance.close();
+//                 });
+
+                $(".tooltipstered").tooltipster('disable');
+                tooltipDisabled = true;
+            },
+            eventAllow: function(dropLocation, draggedEvent) {
+                console.log(list[draggedEvent.id]);
+                console.log(list[draggedEvent.id].IsGroupEvent);
+                
+                var schedule = list[draggedEvent.id];
+                if (schedule.IsGroupEvent) {
+                    if (!schedule.IsChild) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                }
+                else {
+                    return true;
+                }
+            },
+            eventDrop: function( event, delta, revertFunc, jsEvent, ui, view ) { // 일정 드롭 이벤트 핸들러
+            
+                updateEvent(event);
+                
+            },
+            eventResizeStart : function( event, jsEvent, ui, view ) {
+                tooltipDisabled = true;
+                $(".tooltipstered").tooltipster('disable');
+            },
+            eventResize : function( event, jsEvent, ui, view ) {
+
+                updateEvent(event);
+
+            },
+            viewRender : function (view, element) {
+                $("td .fc-day-number").each(function (idx, el, arr) { 
+                    var dayStr = $(this).text();
+                    var date = new moment($(this).parent().data('date')).format('YYYY. M. D');
+                    
+                    var newEventURL = "/setup/ui/recordtypeselect.jsp?ent=Event&save_new_url="+
+                        encodeURIComponent("/00U/e?StartDateTime="+date+"&EndDateTime="+date)+
+                        "&retURL=" + retURL;
+
+                    if(retURL.indexOf('lightning.force.com')!='-1'){
+                        console.log('isLightning');
+                        $(this).html(dayStr);
+                    }else{
+                        console.log('isClassic');
+                        $(this).html("<a href='"+newEventURL+"'>" + dayStr + "</a>");
+                    }
+                });
+            },
+            dayRender : function (date, cell) {
+            },
+            color: 'yellow',
+            textColor: 'black',
+            timezone : 'Asia/Seoul'
+
+        });
+        //$('#calendar').fullCalendar('option', 'timezone', 'Asia/Seoul');
+
+        /* $("#calendar").tooltipster({
+            theme: 'tooltipster-shadow', // http://iamceege.github.io/tooltipster/#theming
+            side: 'top',
+            contentAsHTML: true, // http://iamceege.github.io/tooltipster/#options
+            trigger: 'custom',
+            triggerClose: { // 툴팁 외부 클릭시 툴팁 close
+                mouseleave: true,
+                touchleave: true,
+                scroll: true
+            },
+            distance: 4,
+            interactive: true, // 툴팁 내부의 컨텐츠가 마우스 키보드가 동작하도록 설정
+            functionBefore : function () { // 툴팁이 open 되기 직전 실행
+                closeAllTooltips();
+            },
+            functionPosition : function (instance, helper, position) {
+                position.coord = lastPosition;
+
+                return position;
+            }
+        }); */
+
+
+        $(".fc-center").css("left", (($(".fc-toolbar").width() - $(".fc-center").width()) / 2) + "px");
+
+    });
+
+    // 일정 업데이트
+    // event : 일정 데이터 (FullSchedule 객체)
+    var updateEvent = function (event) {
+
+        if($('.spinnerSwitch').hasClass('slds-hide') == true){
+            $('.spinnerSwitch').toggleClass( 'slds-hide' );
+        }
+
+        console.log('replace public icon');
+        setTimeout(function () {
+            $(".fc-title").each(function (idx) {
+
+                var icon = '';
+                // invitor
+                if ($(this).text().indexOf('[O]') > -1) {
+                    $(this).text($(this).text().replace('[O]', ''));
+
+                    icon += '<i class="fa fa-user-plus" aria-hidden="true"></i>';
+                }
+                // invitee
+                if ($(this).text().indexOf('[C]') > -1) {
+                    $(this).text($(this).text().replace('[C]', ''));
+
+                    icon += '<i class="fa fa-user-plus invitee" aria-hidden="true"></i>';
+                }
+                // high priority
+                if ($(this).text().indexOf('[!]') > -1) {
+                    $(this).text($(this).text().replace('[!]', ''));
+
+                    icon += '<i class="fa fa-exclamation-triangle high-priority" aria-hidden="true"></i>';
+                }
+
+                if (icon) $(icon).prependTo(this);
+            });
+        }, 100);
+
+        var eventId = event.id;
+        var startDate = event.start.clone().tz('Asia/Seoul'); // moment.js time object
+        var endDate = event.end ? event.end.clone().tz('Asia/Seoul') : startDate.clone(); // mement.js time object
+
+        if (event.allDay) {
+            startDate.hour(18).minute(0).second(1);
+            endDate.hour(18).minute(0).second(1);
+        }
+
+        t = startDate;
+
+        // RemoteAction 호출시 날짜는 UnixTimestamp(ms)로
+        var startTime = startDate.add(-9, 'hours').format('x');
+        var endTime = endDate.add(-9, 'hours').format('x');
+
+
+        var eventData = {
+            eventId : eventId,
+            startDateTime : startTime,
+            endDateTime : endTime
+        };
+
+
+//      console.log(JSON.stringify(eventData));
+
+        Visualforce.remoting.Manager.invokeAction(
+            '{!$RemoteAction.ScheduleCalendarController.updateScheduleDate}',
+            JSON.stringify(eventData),
+            function(result, evt){
+
+                //console.log(JSON.stringify(result));
+
+                if (evt.status) {
+                    $('#calendar').fullCalendar( 'refetchEvents' );
+
+                    tooltipDisabled = false;
+                    $(".tooltipstered").tooltipster('enable');
+                } else if (evt.type === 'exception') {
+                    console.log(evt.message);
+                } else {
+                    console.log(evt.message);
+                }
+            }
+        );
+    }
+
+    var deleteEvent = function (id) {
+
+        if($('.spinnerSwitch').hasClass('slds-hide') == true){
+            $('.spinnerSwitch').toggleClass( 'slds-hide' );
+        }
+        Visualforce.remoting.Manager.invokeAction(
+            '{!$RemoteAction.ScheduleCalendarController.deleteSchedule}',
+            id,
+            function(result, evt){
+
+                //console.log(JSON.stringify(result));
+
+                if (evt.status) {
+                    $('#calendar').fullCalendar( 'refetchEvents' );
+
+                    tooltipDisabled = false;
+                    $(".tooltipstered").tooltipster('enable');
+                } else if (evt.type === 'exception') {
+                    console.log(evt.message);
+                } else {
+                    console.log(evt.message);
+                }
+            }
+        );
+    }
+
+    // 일정에 툴팁이 동작하도록 설정
+    var prepareTooltip = function (event, element) {
+
+        var data = list[event.id];
+        //console.log(data);
+
+        var startDate = new moment(data.StartDateTime);
+        var endDate = new moment(data.EndDateTime);
+
+        // 출력 => 2016.8.11 오전 10시 30분
+
+        startDate = startDate.format('YYYY.MM.DD')
+       // startDate = startDate.format('L LT');
+        endDate = endDate.format('L LT');
+
+        data.startDate = startDate;
+        data.endDate = endDate;
+
+        if (!data.What) data.What = {Id:'#', Name:'-'};
+
+        data.ownerId = data.Owner.Id;
+        data.ownerName = data.Owner.Name;
+
+        data.retURL = retURL;
+        
+        var str = data.Subject;
+        if(str!=null){
+            data.Subject = data.Subject.replace('[O]', '');
+            data.Subject = data.Subject.replace('[C]', '');
+            data.Subject = data.Subject.replace('[!]', '');
+        }else{
+        	console.log(data);
+        }
+        
+        if (!data.Activity_Type__c) data.Activity_Type__c = '-';
+        if (!data.Activity_Category__c) data.Activity_Category__c = '-';
+
+
+        // tooltip_template에 미리 만들어둔 html 템플릿을 툴팁의 컨텐츠로 사용
+        var content = $("#tooltip_template").tmpl(data).html();
+
+        // 일정 DOM에 Event ID 데이터 추가 (<p data-event-id="00UO0000009oKwwMAE"> 형식))
+        $(element).data("eventId", data.Id);
+
+        // 일정 DOM에 tooltipster 기능 추가
+        return $(element).tooltipster({
+            animation: 'fade',
+            delay: 200,
+            theme: 'tooltipster-shadow', // http://iamceege.github.io/tooltipster/#theming
+            side: 'bottom',
+            contentAsHTML: true, // http://iamceege.github.io/tooltipster/#options
+            trackerInterval: 10,
+            trackOrigin: true,
+            trigger: 'custom',
+            triggerOpen: { // 마우스진입, 터치시작시 툴팁 open
+                mouseenter: true,
+                touchstart: true
+            },
+            triggerClose: { // 툴팁 외부 클릭시 툴팁 close
+                click: true,
+                mouseleave: true
+            },
+            interactive: true, // 툴팁 내부의 컨텐츠가 마우스 키보드가 동작하도록 설정
+            content: content,
+            functionBefore : function () { // 툴팁이 open 되기 직전 실행
+                closeAllTooltips();
+            }
+        });
+
+    }
+    var closeAllTooltips = function () {
+//     console.log("closeAllTooltips");
+        // 떠있는 모든 툴팁을 닫는다.
+        var instances = $.tooltipster.instances();
+        $.each(instances, function(i, instance){
+            instance.close();
+        });
+    }
+    //displayEvent : 탭 색상
+    var renderEvents = function () {
+        var displayEvent = [];
+        for (var index in events) {
+            var event = events[index];
+            if (!event.id) continue;
+
+            var schedule = list[event.id];
+            var scheduleCategory = schedule.Activity_Type__c || "ETC";
+            if(schedule.Hospital__r != undefined){schedule.Hospital = schedule.Hospital__r;}
+            if (schedule.Activity_Category__c && schedule.Activity_Category__c == "OPD") scheduleCategory = "OPD";
+
+            var category = categories[scheduleCategory];
+
+            if (!category) {
+                continue;
+            }
+
+            if (category.display){
+                displayEvent.push(event);
+            }
+        }
+
+
+        // 현재 출력된 일정을 지우고 다시 그리기
+        $('#calendar').fullCalendar( 'removeEvents');
+        $('#calendar').fullCalendar( 'addEventSource', displayEvent );
+        $('#calendar').fullCalendar( 'rerenderEvents' );
+
+        // 출력된 일정에 툴팁이 동작하도록 설정
+        $('.fc-content').addClass('detail-tooltip');
+        $('.fc-content').attr('data-tooltip-content', '#tooltip_content');
+
+        $(".fc-title").each(function (idx) {
+            var icon = '';
+            // invitor
+            if ($(this).text().indexOf('[O]') > -1) {
+                $(this).text($(this).text().replace('[O]', ''));
+
+                icon += '<i class="fa fa-user-plus" aria-hidden="true"></i>';
+            }
+            // invitee
+            if ($(this).text().indexOf('[C]') > -1) {
+                $(this).text($(this).text().replace('[C]', ''));
+
+                icon += '<i class="fa fa-user-plus invitee" aria-hidden="true"></i>';
+            }
+            // high priority
+            if ($(this).text().indexOf('[!]') > -1) {
+                $(this).text($(this).text().replace('[!]', ''));
+
+                icon += '<i class="fa fa-exclamation-triangle high-priority" aria-hidden="true"></i>';
+            }
+
+            if (icon) $(icon).prependTo(this);
+        });
+        if($('.spinnerSwitch').hasClass( 'slds-hide' ) == false){
+            $('.spinnerSwitch').toggleClass( 'slds-hide' );
+        }/*
+        $(window).ready(function() {
+            $('.fc-prev-button').click(function(){
+               alert('prev is clicked, do something');
+            });
+
+            $('.fc-next-button').click(function(){
+               alert('nextis clicked, do something');
+            });
+
+            $('.fc-today-button').click(function(){
+               alert('nextis clicked, do something');
+            });
+        });*/
+    }
+
+    var moveTo = function (target, id) {
+        if (target == "edit") {
+            location.href = "/" + id + "/e?retURL=" + retURL;
+        } else {
+            // location.href = deleteURL.replace("01r28000000h000", id);
+            if (confirm('일정을 삭제하시겠습니까?')) {
+                deleteEvent(id);
+            }
+        }
+    }
+    /*function Modalclose(){
+        $('.RTSelect').toggleClass('slds-hide');
+    }
+    function Modalsubmit(){RecordTypeId
+        sforce.one.createRecord('Event', $('.slds-select').val());
+        $('.RTSelect').toggleClass('slds-hide');
+    }*/
+    //다른 페이지에서 사용하던 Javascript 추가
+    function searchHospital(){
+        //https://c.cs76.visual.force.com/apex/HospitalSearch?target=Hospital&hpid=&stid=&tab=search&keyword=%EB%82%A8%EB%B6%81
+        if($(".Hospital").val() != '' && $(".Hospital").val() != null){
+            Stringtest = window.open("/apex/HospitalSearch?target=Hospital&hpid=&stid=&tab=search&keyword="+$(".Hospital").val(), '', 'width=1024, height=600, scrollbars=yes');
+        }else{
+            Stringtest = window.open("/apex/HospitalSearch?tab=search", '', 'width=1024, height=600, scrollbars=yes');
+        }
+
+    }
+    function onSelectAccount(id, name) {
+        $(".hiddenHospital").val(id);
+        $(".Hospital").val(name);
+        Stringtest.close();
+    }
+    function SearchCalendar(){
+        if($('.spinnerSwitch').hasClass('slds-hide') == true){
+            $('.spinnerSwitch').toggleClass( 'slds-hide' );
+        }
+        var lkfield = document.getElementById('hiddenHospital').value;
+        var lkfield2 = document.getElementById('Hospital').value;
+
+        if(lkfield2 == ''){
+            document.getElementById('hiddenHospital').value='';
+            lkfield = 'ALL'
+        }
+
+        if(lkfield != ''){
+            Visualforce.remoting.Manager.invokeAction(
+                '{!$RemoteAction.ScheduleCalendarController.getSchedules}',
+                startdt.toISOString(), enddt.toISOString(), $(".scope").val() || 'ALL',lkfield,
+                function(result, evt){
+
+                    list = [];
+                    events = [];
+
+                    if (evt.status) {
+                        for (var i=0; i<result.length; i++) {
+                            var schedule = result[i];
+
+                            if (!schedule.Hospital__r) {Hospital__r = {};};
+                            if (!schedule.Activity_Result__c) schedule.Activity_Result__c = '-';
+                            if (!schedule.Importance__c) schedule.Importance__c = '';
+
+                            var color = '';
+                            if (schedule.Activity_Type__c) {
+                                color = categories[schedule.Activity_Type__c].color;
+                            }
+                            if (schedule.Activity_Category__c && schedule.Activity_Category__c == 'OPD') {
+                                color = categories['OPD'].color;
+                            }
+
+                            if (schedule.IsGroupEvent == true) {
+                                if (schedule.IsChild == true) {
+                                    schedule.Subject = '[C]' + schedule.Subject; // invitee
+                                } else {
+                                    schedule.Subject = '[O]' + schedule.Subject; // invitor
+                                }
+
+                            }
+                            if (schedule.Importance__c == 'High') {
+                                schedule.Subject = '[!]' + schedule.Subject;
+                                console.log(schedule.Subject);
+                            }
+                            schedule.retURL = retURL;
+
+                            var event = { // FullCalendar의 Event 객체로 변환 (http://fullcalendar.io/docs/event_data/Event_Object/)
+                                id : schedule.Id,
+                                title : schedule.Subject,
+                                allDay : schedule.IsAllDayEvent,
+                                Hospital : schedule.Hospital,
+                                start : new moment(schedule.StartDateTime).format(),
+                                end : new moment(schedule.EndDateTime).format(),
+                                color : color
+                            };
+                            // 툴팁에 출력하기 위해 list에 원본 데이터 저장
+                            list[schedule.Id] = schedule;
+                            events.push(event);
+                        }
+                        renderEvents();
+                        document.getElementById('hiddenHospital').value = '';
+                        document.getElementById('Hospital').value = '';
+                    } else if (evt.type === 'exception') {
+                        console.log(evt.message);
+                    } else {
+                        console.log(evt.message);
+                    }
+                }
+            );
+        }else{
+            alert('병원선택 후 \'Search\'버튼을 사용해주세요.');
+            renderEvents();
+        }     
+    }
+    // Enter Key 방지
+    // Key Code 값 13이 enter key
+    window.addEventListener('keydown', function(ev){
+        if(ev.keyCode === 13){
+            var stringcheck = '';
+            stringcheck = '{!$Component.search.Event}_lkwgt';
+            $('a[id=\''+stringcheck+'\']').get(0).click();
+            ev.preventDefault();
+            ev.stopImmediatePropagation();
+        }
+    }, true);
+
+</script>
+    <!-- 캘린더 출력 컨테이너 -->
+    <div id="filter-group">
+        <div id="filter">
+            <span class="label slds-float_left">Category : </span>
+            <div class="category_group slds-float_left">
+                <span class="category field-works" data-category="Field Work">&nbsp;</span>
+                <span class="category inoffice-works" data-category="In-Office Work">&nbsp;</span>
+                <span class="category vacation" data-category="Vacation">&nbsp;</span>
+                <span class="category FSE" data-category="FSE">&nbsp;</span>
+                <span class="category opd" data-category="OPD">&nbsp;</span>
+                <span class="category congress" data-category="Congress">&nbsp;</span>
+                <span class="category etc" data-category="ETC">&nbsp;</span>
+            </div>
+        </div>
+        <!--<apex:outputText rendered="{!OR(user.Post__c = 'Team Leader', user.Post__c = 'Group Leader')}">-->
+        <apex:outputText >
+            <div id="scope">
+                <span class="label">Filter : </span>
+                <select class="slds-select scope">
+                    <option value="ME">My Schedule</option>
+                    <option value="ALL">All Schedule</option>
+                    <apex:repeat value="{!members}" var="member">
+                        <option value="{!member.Id}">{!member.Name}</option>
+                    </apex:repeat>
+                </select>
+            </div>
+        </apex:outputText>
+        <div class="slds-size--3-of-12 slds-float_left">
+            <span class="label slds-float_left padding5">병원명 : </span>
+            <div class="slds-form-element slds-float_left width70">
+                <div class="slds-form-element__control">
+                    <div class="slds-combobox_container">
+                        <div class="slds-combobox slds-dropdown-trigger slds-dropdown-trigger_click" aria-expanded="false" aria-haspopup="listbox" role="combobox">
+                            <div class="slds-combobox__form-element slds-input-has-icon slds-input-has-icon_right" role="none">
+                                <input type="hidden" id="hiddenHospital" class="hiddenHospital" />
+                                <input class="slds-input2 slds-combobox__input Hospital slds-size--3-of-4" id="Hospital" aria-autocomplete="list" aria-controls="listbox-id-1" autocomplete="off" role="textbox" type="text" value="" />
+                                <apex:image id="theImage" styleClass="searchimages" value="{!$Resource.slds_283+'/icons/utility/search_60.png'}" width="20" height="20" alt="Description of image here" onclick="searchHospital()"/>
+                                <button id="btn-Hospital" type="button" class="fc-button fc-state-default fc-corner-left fc-corner-right" onClick="SearchCalendar()">Search</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--<apex:form id="search">
+            <span class="label slds-float_left smargin">병원명 : </span>
+            <div class="search-box slds-float_left field-hospital">
+                <apex:inputField id="Event" styleClass="InputSearch" value="{!e1.Hospital__c}" />
+                <button id="btn-Hospital" type="button" class="fc-button fc-state-default fc-corner-left fc-corner-right" onClick="SearchCalendar()">Search</button>
+                <apex:message for="Event" styleClass="EventMessage"></apex:message>
+            </div>
+        </apex:form>-->
+    </div>
+    <div class="ClearLeft" id="link-btn">
+        <button id="btn-multi-user" type="button" class="fc-button fc-state-default fc-corner-left fc-corner-right">Multi-User Calendar</button>
+    </div>
+    <div class="slds-scope spinnerSwitch">
+        <apex:form id="form">
+            <!-- SPINNER -->
+            <div class="slds-spinner_container slds-is-fixed">
+                <div role="status" class="slds-spinner slds-spinner_medium">
+                    <span class="slds-assistive-text">Loading</span>
+                    <div class="slds-spinner__dot-a"></div>
+                    <div class="slds-spinner__dot-b"></div>
+                </div>
+            </div>
+            <!-- / SPINNER -->
+        </apex:form>
+    </div>
+    <div id="calendar"></div>
+
+    <!-- 툴팁 템플릿 -->
+    <script id="tooltip_template" type="text/html">
+        <div>
+            <div class="slds-form--stacked slds-grow slds-scrollable--y" style="min-width:150px;">
+                <div class="slds-panel__section slds-has-divider--bottom">
+                    <div class="slds-media slds-tile">
+                        <div class="slds-media__body" style="padding-bottom:10px;">
+
+                            <p class="tile__title slds-truncate slds-text-heading--small">
+                                {{if Importance__c == "High"}}<i class="fa fa-exclamation-triangle important-title" aria-hidden="true"></i>{{/if}}
+                                <a class="detail-link" href="/${Id}?retURL=${retURL}">
+                                    ${Subject}
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div style="padding-top:10px;"></div>
+                <div class="slds-panel__section">
+                    <div class="slds-form-element slds-hint-parent slds-has-divider--bottom">
+                        <span class="slds-form-element__label">{!$Label.activity_type}</span>
+                        <div class="slds-form-element__control">
+                            <span class="slds-form-element__static detail-start">${Activity_Type__c}</span>
+                        </div>
+                    </div>
+                    <div class="slds-form-element slds-hint-parent slds-has-divider--bottom">
+                        <span class="slds-form-element__label">{!$Label.activity_category}</span>
+                        <div class="slds-form-element__control">
+                            <span class="slds-form-element__static detail-start">${Activity_Category__c}</span>
+                        </div>
+                    </div>
+                    <div class="slds-form-element slds-hint-parent slds-has-divider--bottom">
+                        <span class="slds-form-element__label">{!$Label.owner}</span>
+                        <div class="slds-form-element__control">
+                            <span class="slds-form-element__static detail-start">${Owner.Name}</span>
+                        </div>
+                    </div>
+                    <div class="slds-form-element slds-hint-parent slds-has-divider--bottom">
+                        <span class="slds-form-element__label">{!$Label.Date}</span>
+                        <div class="slds-form-element__control">
+                            <span class="slds-form-element__static detail-start">${startDate}</span>
+                        </div>
+                    </div>
+                    <div class="slds-form-element slds-hint-parent slds-has-divider--bottom" style="display:none;">
+                        <span class="slds-form-element__label">{!$Label.end}</span>
+                        <div class="slds-form-element__control">
+                            <span class="slds-form-element__static detail-end">${endDate}</span>
+                        </div>
+                    </div>
+                    <div class="slds-form-element slds-hint-parent slds-has-divider--bottom">
+                        <span class="slds-form-element__label">{!$Label.hospital}</span>
+                        <div class="slds-form-element__control">
+                            <span class="slds-form-element__static detail-what"><a href="${Hospital__r.Id ? ('/' + Hospital__r.Id) : 'javascript:void(0)'}">${Hospital__r.Name ? Hospital__r.Name : '-'}</a></span>
+                        </div>
+                    </div>
+                    <div class="slds-form-element slds-hint-parent slds-has-divider--bottom">
+                        <span class="slds-form-element__label">{!$Label.activity_result}</span>
+                        <div class="slds-form-element__control">
+                            <span class="slds-form-element__static detail-result">${Activity_Result__c}</span>
+                        </div>
+                    </div>
+                            <button type="button"  onclick="moveTo('edit', '${Id}')">Edit</button>
+                            <button type="button"  onclick="moveTo('delete', '${Id}')">Delete</button>
+                </div>
+                {{if OwnerId == chkId||chkP=="true" }}<div class="slds-docked-form-footer">
+                    <button type="button" class="slds-button slds-button--neutral" onclick="moveTo('edit', '${Id}')">Edit</button>
+                    <button type="button" class="slds-button slds-button--neutral" onclick="moveTo('delete', '${Id}')">Delete</button>
+                </div>{{/if}}
+            </div>
+        </div>
+    </script>
+    <!--<apex:form >
+        <div class="RTSelect slds-hide" style="height: 640px;">
+            <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Modal Header</h2>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                        <div class="slds-form-element">
+                            <div class="slds-form-element__control">
+                                <div class="slds-select_container">
+                                    <select class="slds-select" id="select-01">
+                                        <apex:repeat value="{!eRT}" var="a">
+                                            <option value="{!a.Id}">{!a.Name}</option>
+                                        </apex:repeat>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <footer class="slds-modal__footer">
+                        <div class="slds-button slds-button_neutral" onclick="Modalclose()">Cancel</div>
+                        <div class="slds-button slds-button_brand" onclick="Modalsubmit()">save</div>
+                        &lt;!&ndash;<button class="slds-button slds-button_brand" onclick="Submit()">Save</button>&ndash;&gt;
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </div>
+    </apex:form>-->
+</apex:page>
